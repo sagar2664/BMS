@@ -13,16 +13,12 @@ dotenv.config();
 const app = express();
 
 // CORS Configuration
-const corsOptions = {
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'], // Add your frontend URLs
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+app.use(cors({
+  origin: ['https://bms-nine-gamma.vercel.app', 'http://localhost:5173'],
   credentials: true,
-  optionsSuccessStatus: 200
-};
-
-// Apply CORS middleware
-app.use(cors(corsOptions));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Middleware Configuration
 // Parse JSON request bodies

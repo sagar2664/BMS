@@ -1,9 +1,7 @@
 import axios from 'axios';
 
 // Base URL for all API requests
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://bms-backend.onrender.com/api'
-  : 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Create axios instance with default configuration
 const api = axios.create({
@@ -13,6 +11,19 @@ const api = axios.create({
   },
   withCredentials: true
 });
+
+// Add request interceptor to handle errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized access
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Request interceptor to add authentication token to all requests
 api.interceptors.request.use(
