@@ -66,6 +66,11 @@ router.post('/login', async (req, res) => {
     // Extract login credentials
     const { email, password } = req.body;
 
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Please provide both email and password' });
+    }
+
     // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
@@ -92,12 +97,23 @@ router.post('/login', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '24h' },
       (err, token) => {
-        if (err) throw err;
-        res.json({ token });
+        if (err) {
+          console.error('JWT sign error:', err);
+          return res.status(500).json({ message: 'Error generating token' });
+        }
+        res.json({ 
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+          }
+        });
       }
     );
   } catch (err) {
-    console.error(err.message);
+    console.error('Login error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });

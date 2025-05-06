@@ -20,6 +20,7 @@ const auth = async (req, res, next) => {
     req.token = token;
     next();
   } catch (error) {
+    console.error('Auth middleware error:', error);
     res.status(401).json({ message: 'Token is not valid' });
   }
 };
@@ -47,6 +48,7 @@ const adminAuth = async (req, res, next) => {
     req.token = token;
     next();
   } catch (error) {
+    console.error('Admin auth middleware error:', error);
     res.status(401).json({ message: 'Token is not valid' });
   }
 };

@@ -32,6 +32,21 @@ const hasOverlappingBooking = async (hoardingId, startDate, endDate) => {
   return !!overlappingBooking;
 };
 
+// @route   GET /api/bookings/my-bookings
+// @desc    Get current user's bookings
+// @access  Private
+router.get('/my-bookings', auth, async (req, res) => {
+  try {
+    const bookings = await Booking.find({ user: req.user.id })
+      .populate('hoarding')
+      .sort({ createdAt: -1 }); // Sort by creation date, newest first
+    res.json(bookings);
+  } catch (err) {
+    console.error('Error fetching user bookings:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/bookings
 // @desc    Get all bookings (admin) or user's bookings
 // @access  Private
@@ -39,9 +54,14 @@ router.get('/', auth, async (req, res) => {
   try {
     let bookings;
     if (req.user.role === 'admin') {
-      bookings = await Booking.find().populate('user', 'name email').populate('hoarding');
+      bookings = await Booking.find()
+        .populate('user', 'name email')
+        .populate('hoarding')
+        .sort({ createdAt: -1 });
     } else {
-      bookings = await Booking.find({ user: req.user.id }).populate('hoarding');
+      bookings = await Booking.find({ user: req.user.id })
+        .populate('hoarding')
+        .sort({ createdAt: -1 });
     }
     res.json(bookings);
   } catch (err) {
@@ -91,20 +111,42 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ message: 'Hoarding is not available' });
     }
 
+    // Calculate duration in days
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+
+    // Calculate total amount
+    const totalAmount = duration * hoarding.price;
+
+    // Check for overlapping bookings
+    const hasOverlap = await hasOverlappingBooking(hoardingId, start, end);
+    if (hasOverlap) {
+      return res.status(400).json({ message: 'This hoarding is already booked for the selected dates' });
+    }
+
     // Create booking
     const booking = new Booking({
       user: req.user.id,
       hoarding: hoardingId,
-      startDate,
-      endDate,
+      startDate: start,
+      endDate: end,
+      totalAmount,
       status: 'pending'
     });
 
     await booking.save();
+    
+    // Populate hoarding details before sending response
+    await booking.populate('hoarding');
+    
     res.json(booking);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Booking creation error:', err);
+    res.status(500).json({ 
+      message: 'Server error',
+      error: err.message 
+    });
   }
 });
 

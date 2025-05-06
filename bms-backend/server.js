@@ -12,12 +12,19 @@ dotenv.config();
 // Create Express application instance
 const app = express();
 
+// CORS Configuration
+const corsOptions = {
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'], // Add your frontend URLs
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
+
 // Middleware Configuration
-// Enable CORS for cross-origin requests
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true
-}));
 // Parse JSON request bodies
 app.use(express.json());
 // Parse URL-encoded request bodies
